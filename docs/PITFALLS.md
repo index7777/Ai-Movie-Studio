@@ -292,3 +292,32 @@ Upstream `create_ltx_video_pipeline()` 會在載入 T5 後依序執行 `transfor
 `tools/ltx_device_diagnostic.py` 的 T5、Transformer BF16→CUDA、Transformer FP16→CUDA、VAE BF16→CUDA 全部 exit 0。VAE 單獨 CUDA placement 實測約 `2.33 GiB` PyTorch allocated，CUDA free 從約 `4.99 GiB` 降至 `2.63 GiB`，釋放後恢復。
 
 因此目前沒有證據支持「某一個 submodel / BF16 / FP16 單獨造成 native crash」。下一步測試 upstream 初始化的關鍵差異：在同一 process 中依序保留 Transformer、VAE、T5 的 CUDA residency，量測 cumulative allocated/reserved/free VRAM。此測試仍必須置於 child process，因為超過 6GB 邊界可能表現為 CUDA OOM 或 Windows native termination。
+
+
+### P-014 root-cause boundary：完整 CUDA residency 超過 RTX 2060 6GB
+
+Cumulative placement 實測：
+
+```text
+Transformer CUDA:
+  allocated = 3.58 GiB
+  reserved  = 4.03 GiB
+  cuda_free = 0.35 / 6.00 GiB
+
+Transformer + VAE CUDA:
+  allocated = 5.93 GiB
+  reserved  = 6.28 GiB
+  cuda_free = 0.00 / 6.00 GiB
+
+Then T5 checkpoint shard loading begins:
+  EXIT_CODE = 3221225477
+  HEX       = 0xC0000005
+```
+
+單一 Transformer、VAE、T5 placement 都已各自通過，因此目前最強證據是 upstream initialization 的 cumulative CUDA residency 對 6GB GPU 不成立。Transformer + VAE 已耗盡可用 VRAM，T5 還未完成載入就 native crash。
+
+**工程決策**：
+- 不再把 FP16 視為主要修正；BF16/FP16 都是 16-bit，無法消除三個 submodel 同時 residency 的容量問題。
+- RTX 2060 LTX backend 必須在 pipeline construction 階段避免同時把 Transformer、VAE、T5 常駐 CUDA。
+- 下一個 prototype 採 sequential/model CPU offload：模型初始留 CPU，只在需要時搬運或使用 Accelerate offload hooks。
+- 在 offload prototype 成功前，不再執行原始 upstream full-generation path。
