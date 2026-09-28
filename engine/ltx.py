@@ -1,9 +1,4 @@
-"""LTX-Video backend adapter.
-
-The adapter is intentionally lazy: importing Ai-Movie-Studio does not require
-LTX-Video to be installed. The official package is loaded only when the backend
-is selected.
-"""
+"""LTX-Video backend adapter."""
 
 from __future__ import annotations
 
@@ -35,12 +30,15 @@ class LTXVideoEngine(VideoEngine):
             ) from exc
 
         if not self.pipeline_config.exists():
-            raise FileNotFoundError(f"LTX pipeline config not found: {self.pipeline_config}")
+            raise FileNotFoundError(
+                f"LTX pipeline config not found: {self.pipeline_config}"
+            )
 
-        hw = detect_hardware()
-        profile = select_runtime_profile(hw)
+        profile = select_runtime_profile(detect_hardware())
         if profile.dtype != "float16":
-            raise RuntimeError(f"Unsupported LTX MVP dtype policy: {profile.dtype}")
+            raise RuntimeError(
+                f"Unsupported LTX MVP dtype policy: {profile.dtype}"
+            )
 
         self._infer = infer
         self._config_cls = InferenceConfig
@@ -49,16 +47,24 @@ class LTXVideoEngine(VideoEngine):
         if self._infer is None or self._config_cls is None:
             raise RuntimeError("Engine is not loaded")
 
-        hw = detect_hardware()
-        profile = select_runtime_profile(hw)
+        profile = select_runtime_profile(detect_hardware())
         width = request.width or profile.target_width
         height = request.height or profile.target_height
 
-        # LTX temporal shape convention: 8n + 1 frames.
-        requested_frames = int(request.options.get("num_frames", profile.max_frames_hint))
-        num_frames = max(9, requested_frames - ((requested_frames - 1) % 8))
+        requested_frames = int(
+            request.options.get("num_frames", profile.max_frames_hint)
+        )
+        num_frames = max(
+            9, requested_frames - ((requested_frames - 1) % 8)
+        )
 
-        output_dir = request.output_path if request.output_path.suffix == "" else request.output_path.parent\n        output_dir.mkdir(parents=True, exist_ok=True)
+        output_dir = (
+            request.output_path
+            if request.output_path.suffix == ""
+            else request.output_path.parent
+        )
+        output_dir.mkdir(parents=True, exist_ok=True)
+
         torch.cuda.reset_peak_memory_stats()
         started = time.perf_counter()
 
@@ -70,7 +76,8 @@ class LTXVideoEngine(VideoEngine):
                 width=width,
                 num_frames=num_frames,
                 seed=request.seed,
-                output_path=str(output_dir),\n                offload_to_cpu=profile.cpu_offload,
+                output_path=str(output_dir),
+                offload_to_cpu=profile.cpu_offload,
                 conditioning_media_paths=[str(request.image_path)],
                 conditioning_start_frames=[0],
             )
