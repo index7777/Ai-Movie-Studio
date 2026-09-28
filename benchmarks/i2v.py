@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+from pathlib import Path
+import sys
 
-from engine.hardware import detect_hardware
+# Allow direct execution from the repository root on Windows:\n#     python benchmarks\\i2v.py\nROOT = Path(__file__).resolve().parents[1]\nif str(ROOT) not in sys.path:\n    sys.path.insert(0, str(ROOT))\n\nfrom engine.hardware import detect_hardware
 from engine.profiles import select_runtime_profile
 
 
