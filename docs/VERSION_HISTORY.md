@@ -48,3 +48,22 @@ Git: 2.55.0.windows.5
 - RTX 2060 實測 6144 MiB total / 3475 MiB free（測試當下）。
 - FFmpeg 尚未安裝。
 - PyTorch 尚未安裝；下一 checkpoint 為 CUDA/FP16 smoke test。
+
+
+### 2026-09-28 CUDA checkpoint PASS
+
+```text
+PyTorch: 2.9.0+cu128
+CUDA runtime: 12.8
+CUDA available: True
+GPU: RTX 2060
+Compute capability: 7.5
+VRAM: 6.00 GiB
+PyTorch free VRAM at test: 4.99 GiB
+FP16 smoke test: PASS
+STATUS: PASS
+```
+
+- 發現 NumPy 尚未安裝。
+- PyTorch 回報 BF16 supported=True，但 RTX 2060/Turing 的 backend policy 仍固定優先 FP16，不把該 API 當作原生 BF16 Tensor Core 能力判定。
+- CUDA 基礎環境驗證完成，下一階段進入 I2V backend feasibility benchmark。
