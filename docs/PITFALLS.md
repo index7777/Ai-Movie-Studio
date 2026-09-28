@@ -285,3 +285,10 @@ GPU: RTX 2060
 Upstream `create_ltx_video_pipeline()` 會在載入 T5 後依序執行 `transformer.to(device)`、`vae.to(device)`、`text_encoder.to(device)`，之後才建立 pipeline。另一方面，`offload_to_cpu` 是更後面的 pipeline invocation 參數，因此它不會避免初始化時先把完整 submodels 搬到 CUDA。
 
 下一個 diagnostic 必須隔離 T5 load 與各 model 的 CUDA placement。對 6GB GPU，不應再用完整 generation 作為診斷工具。
+
+
+### P-014 follow-up 4：所有單一 device-placement stage 均通過
+
+`tools/ltx_device_diagnostic.py` 的 T5、Transformer BF16→CUDA、Transformer FP16→CUDA、VAE BF16→CUDA 全部 exit 0。VAE 單獨 CUDA placement 實測約 `2.33 GiB` PyTorch allocated，CUDA free 從約 `4.99 GiB` 降至 `2.63 GiB`，釋放後恢復。
+
+因此目前沒有證據支持「某一個 submodel / BF16 / FP16 單獨造成 native crash」。下一步測試 upstream 初始化的關鍵差異：在同一 process 中依序保留 Transformer、VAE、T5 的 CUDA residency，量測 cumulative allocated/reserved/free VRAM。此測試仍必須置於 child process，因為超過 6GB 邊界可能表現為 CUDA OOM 或 Windows native termination。
