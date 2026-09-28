@@ -77,3 +77,22 @@ class VideoEngine:
 - 開發決策與環境差異寫入 docs。
 - 發現可重現問題時，需記錄觸發條件與 workaround。
 - 每次架構或模型版本切換需更新 VERSION_HISTORY。
+
+
+## LTX-Video backend integration checkpoint
+
+第一個實際 backend 選用官方 LTX-Video 2B 0.9.8 distilled 作 feasibility benchmark。
+
+目前官方 metadata：
+- Python requirement: >= 3.10；官方 README 的實測環境為 Python 3.10.5 / CUDA 12.2。
+- PyTorch requirement: >= 2.1.x。
+- transformers: >=4.47.2,<4.52.0。
+- 官方提供 `ltxv-2b-0.9.8-distilled`，描述為較小、較輕 VRAM 的 checkpoint。
+- 官方 FP8 kernels 針對 Ada 或更新 GPU；RTX 2060/Turing 不啟用。
+
+整合原則：
+1. 保留現有 Torch 2.9.0+cu128，不讓 backend 安裝步驟主動覆蓋 CUDA Torch。
+2. LTX package lazy import，未安裝時主程式仍可啟動。
+3. RTX 2060 預設 FP16。
+4. 第一輪只驗證 load / I2V / OOM 行為，不把成功視為最終品質 profile。
+5. benchmark 記錄 elapsed time 與 PyTorch peak allocated VRAM。
