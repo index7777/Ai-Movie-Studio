@@ -1,0 +1,14 @@
+# LTX-Video backend compatibility layer.
+# Keep the existing CUDA-enabled torch installation; do not reinstall torch here.
+#
+# Official LTX-Video currently declares:
+#   Python >= 3.10
+#   diffusers >= 0.28.2
+#   transformers >= 4.47.2,<4.52.0
+#   huggingface-hub ~= 0.30
+#
+# Install the official repository separately in editable mode so its own
+# pyproject remains authoritative. This file pins only compatibility-sensitive
+# packages we want to inspect before backend installation.
+transformers>=4.47.2,<4.52.0
+huggingface-hub~=0.30
