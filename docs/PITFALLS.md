@@ -276,3 +276,12 @@ GPU: RTX 2060
 - Windows + PyTorch/CUDA native memory pressure
 
 仍保留 FP16 patch 作為實驗，但它是用來隔離 LTX dtype/load path，不再把「BF16 unsupported」當作既定 root cause。
+
+
+### P-014 follow-up 3：checkpoint load/cast stages 全部通過
+
+`tools/ltx_load_diagnostic.py` 實測 metadata、VAE load、Transformer load、Transformer BF16 cast、Transformer FP16 cast 全部 exit 0。這些 cast stage 仍在 CPU；CUDA free VRAM 沒有下降。
+
+Upstream `create_ltx_video_pipeline()` 會在載入 T5 後依序執行 `transformer.to(device)`、`vae.to(device)`、`text_encoder.to(device)`，之後才建立 pipeline。另一方面，`offload_to_cpu` 是更後面的 pipeline invocation 參數，因此它不會避免初始化時先把完整 submodels 搬到 CUDA。
+
+下一個 diagnostic 必須隔離 T5 load 與各 model 的 CUDA placement。對 6GB GPU，不應再用完整 generation 作為診斷工具。
