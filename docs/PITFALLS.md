@@ -217,3 +217,30 @@ SyntaxError: unexpected character after line continuation character
 **修正與規則**：
 - 將該 statement 改為正常多行 Python source。
 - 後續所有程式化 source patch 必須在提交前讀回/語法檢查，避免重複發生 escaped-newline corruption。
+
+
+## P-014：LTX 2B 首次 RTX 2060 執行在 model cast/load 階段提前結束
+
+首輪命令：
+
+```text
+python benchmarks\\i2v.py --backend ltx --image input\\test.jpg
+```
+
+已成功通過 Python syntax、LTX import、InferenceConfig 與 conditioning shape：
+
+```text
+Loading LTX backend...
+Starting generation...
+Padded dimensions: 288x512x25
+There are modules in Transformer3DModel that should be kept in float32: [].
+Casting directly with to() can lead to inconsistent results...
+```
+
+之後程序返回 shell，未印出 Ai-Movie-Studio 的 RESULT/STATUS，且沒有 Python traceback。這表示失敗點已進入 upstream model loading/casting 附近，但目前資訊不足以判定是 Windows process termination、native/CUDA failure、OOM，或 upstream dtype path。
+
+**下一步診斷規則**：
+- benchmark 必須輸出 process exit 可觀察資訊並 flush stage markers。
+- Windows 執行後立即記錄 `echo %ERRORLEVEL%`。
+- 同時檢查是否產生 output artifact。
+- 在取得 exit code 前，不把此事件直接歸類為 CUDA OOM。
