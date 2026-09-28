@@ -201,3 +201,19 @@ ModuleNotFoundError: No module named 'engine'
 - 建立專案自己的 Turing config override，明確使用非 FP8、非 BF16 路線。
 - 0.9.8 multi-scale 留到基本 2B pipeline 可運作後再測。
 - backend 必須讀取並驗證 config precision，不可只相信外層 runtime profile。
+
+
+## P-013：LTX backend source 再次出現 literal `\\n` 導致 SyntaxError
+
+**錯誤**：
+
+```text
+engine/ltx.py, line 61
+SyntaxError: unexpected character after line continuation character
+```
+
+**原因**：程式化 patch `engine/ltx.py` 時，將預期的 source newline 寫成 literal `\\n`。這與 P-011 follow-up 是同類型 source-generation escaping bug。
+
+**修正與規則**：
+- 將該 statement 改為正常多行 Python source。
+- 後續所有程式化 source patch 必須在提交前讀回/語法檢查，避免重複發生 escaped-newline corruption。
