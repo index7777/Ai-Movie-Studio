@@ -96,3 +96,17 @@ class VideoEngine:
 3. RTX 2060 預設 FP16。
 4. 第一輪只驗證 load / I2V / OOM 行為，不把成功視為最終品質 profile。
 5. benchmark 記錄 elapsed time 與 PyTorch peak allocated VRAM。
+
+
+## LTX native-crash isolation
+
+After the first real LTX run exited with Windows `0xC0000005`, full generation is paused. `tools/ltx_load_diagnostic.py` runs checkpoint stages in child processes and reports both signed and hexadecimal exit codes.
+
+Stage order:
+1. safetensors metadata only
+2. VAE `from_pretrained`
+3. Transformer `from_pretrained`
+4. Transformer BF16 cast
+5. Transformer FP16 cast
+
+The diagnostic stops on the first failing stage so a native crash does not obscure the boundary. Each child prints available system RAM and CUDA free/total memory at stage markers.
