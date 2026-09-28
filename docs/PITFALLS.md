@@ -181,3 +181,10 @@ ModuleNotFoundError: No module named 'engine'
 **原因**：Python 直接執行 `benchmarks/i2v.py` 時，`sys.path[0]` 是 `benchmarks/`，repository root 不一定在 module search path，因此 sibling package `engine/` 無法 import。
 
 **修正**：benchmark entrypoint 明確將 repository root 加入 `sys.path`。MVP 後續若正式 package 化，改用 `pyproject.toml` + editable install，避免各 entrypoint 重複處理 import path。
+
+
+### P-011 follow-up：修正檔案時誤寫 literal `\\n`
+
+第一次修正把換行 escape 寫成了檔案中的 literal `\\n`，導致 ROOT/sys.path bootstrap 整段落在 comment 中，實際沒有執行，所以錯誤仍為 `ModuleNotFoundError: No module named 'engine'`。
+
+**修正**：重新寫入真正的換行字元，並在提交後讀回檔案確認 source layout。這是程式化修改 source file 時必須注意的 escaping 問題。
