@@ -119,3 +119,26 @@ LTX-Video 專案宣告 Python `>=3.10`，但官方 README 的已測環境是 Pyt
 官方 FramePack 要求至少 6GB VRAM，但明確指出 RTX 20XX 未測試；因此不能只因為「6GB」就把它視為 RTX 2060 的確定解法。
 
 **策略**：先把 FramePack 視為 benchmark 候選，不作為第一個必須成功的 backend。
+
+
+## P-009：首次 preflight 實測（Python 3.12 venv）
+
+2026-09-28 本機手動執行 `python tools\\preflight.py`：
+
+```text
+Python: 3.12.4
+OS: Windows 11 10.0.22631
+System RAM: 63.94 GiB total / 35.48 GiB available
+GPU: NVIDIA GeForce RTX 2060
+VRAM: 6144 MiB total / 2480 MiB used / 3475 MiB free
+Driver: 616.92
+FFmpeg: NOT FOUND
+PyTorch: NOT INSTALLED
+```
+
+**結論**：
+
+- 64GB system RAM 足夠支援後續 CPU offload 實驗。
+- Windows WDDM 桌面狀態下僅約 3.4GB GPU VRAM 可直接使用；正式 benchmark 前應關閉非必要 GPU 應用。
+- FFmpeg 尚未安裝，列為本機 runtime dependency，不使用 GitHub Actions 自動安裝。
+- 下一關先固定 PyTorch CUDA wheel 並執行 FP16 smoke test，再安裝任何 I2V backend。
