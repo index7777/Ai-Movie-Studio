@@ -89,3 +89,17 @@ STATUS: READY FOR BACKEND BENCHMARK
 ```
 
 下一階段：實測第一個 I2V backend。首選候選為 LTX-Video 2B distilled，但必須先做相容性/VRAM feasibility 驗證；RTX 2060 不使用 Ada+ 專用 FP8 kernels，且專案仍以 FP16 為 Turing 預設。
+
+
+### 2026-09-28 LTX base compatibility PASS
+
+```text
+Python: 3.12.4
+Torch: 2.9.0+cu128
+CUDA: 12.8
+GPU: RTX 2060 / SM 7.5
+LTX package: not installed
+STATUS: BASE COMPATIBLE
+```
+
+Source review 後調整 benchmark 計畫：不直接以 2B 0.9.8 multi-scale/BF16 config 作 RTX 2060 首測；先以 2B 0.9.6 distilled 8-step base pipeline 驗證 feasibility。
