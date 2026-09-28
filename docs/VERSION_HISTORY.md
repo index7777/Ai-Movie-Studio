@@ -103,3 +103,14 @@ STATUS: BASE COMPATIBLE
 ```
 
 Source review 後調整 benchmark 計畫：不直接以 2B 0.9.8 multi-scale/BF16 config 作 RTX 2060 首測；先以 2B 0.9.6 distilled 8-step base pipeline 驗證 feasibility。
+
+
+### 2026-09-28 LTX checkpoint downloaded
+
+```text
+ltxv-2b-0.9.6-distilled-04-25.safetensors
+size: ~6.34 GB
+location: models/ltx/
+```
+
+Added the first real `--backend ltx` benchmark path. Initial defaults are intentionally conservative: 512x288, 25 frames, seed 12345, CPU offload enabled by the low-VRAM profile.
