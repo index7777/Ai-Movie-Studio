@@ -188,3 +188,16 @@ ModuleNotFoundError: No module named 'engine'
 第一次修正把換行 escape 寫成了檔案中的 literal `\\n`，導致 ROOT/sys.path bootstrap 整段落在 comment 中，實際沒有執行，所以錯誤仍為 `ModuleNotFoundError: No module named 'engine'`。
 
 **修正**：重新寫入真正的換行字元，並在提交後讀回檔案確認 source layout。這是程式化修改 source file 時必須注意的 escaping 問題。
+
+
+## P-012：LTX config 的 precision 才是實際模型 dtype policy
+
+官方 LTX 2B distilled YAML 目前將 `precision` 設為 `bfloat16`；0.9.8 distilled 另外使用 multi-scale pipeline 與 spatial upscaler。只在 Ai-Movie-Studio runtime profile 設定 `float16` 並不會自動覆蓋官方 pipeline config。
+
+**影響**：RTX 2060/Turing 不應直接使用原始 BF16 config 作為第一輪 benchmark。
+
+**策略**：
+- 第一輪採 2B 0.9.6 distilled（8-step base pipeline）作 feasibility baseline。
+- 建立專案自己的 Turing config override，明確使用非 FP8、非 BF16 路線。
+- 0.9.8 multi-scale 留到基本 2B pipeline 可運作後再測。
+- backend 必須讀取並驗證 config precision，不可只相信外層 runtime profile。
