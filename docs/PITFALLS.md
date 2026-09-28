@@ -255,3 +255,24 @@ Casting directly with to() can lead to inconsistent results...
 - 下一個 LTX 實驗必須是「真正修改 upstream dtype path」的 FP16 patch，而不是只改 Ai-Movie-Studio profile/YAML。
 - patch 前先以獨立 subprocess 做最小 BF16/FP16 CUDA smoke test，讓 native crash 不會帶走主 benchmark process。
 - 若 patched FP16 仍 native crash 或超出 6GB VRAM，LTX 2B 在此硬體列為不適合 MVP baseline，轉測下一 backend。
+
+
+### P-014 follow-up 2：RTX 2060 基本 BF16 CUDA 運算本身可執行
+
+獨立 subprocess 實測：
+
+```text
+float16 matmul: PASS / exit 0
+bfloat16 matmul: PASS / exit 0
+GPU: RTX 2060
+```
+
+因此先前 LTX 的 `0xC0000005` **不能歸因為「Turing 完全不能執行 BF16」**。目前證據只支持：native crash 發生在 LTX model loading/casting 附近。
+
+下一步診斷應縮小到：
+- 大型 checkpoint deserialization / model construction
+- model-wide dtype cast
+- CPU offload / Accelerate hooks
+- Windows + PyTorch/CUDA native memory pressure
+
+仍保留 FP16 patch 作為實驗，但它是用來隔離 LTX dtype/load path，不再把「BF16 unsupported」當作既定 root cause。
