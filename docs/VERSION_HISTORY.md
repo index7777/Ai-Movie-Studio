@@ -38,3 +38,13 @@ Git: 2.55.0.windows.5
 3. fp16 能力。
 4. ffmpeg 是否可用。
 5. 再決定第一個 I2V backend。
+
+
+### 2026-09-28 Preflight checkpoint
+
+- 專案 venv 建立成功，Python executable 指向 `.venv\\Scripts\\python.exe`。
+- `psutil 7.2.2` 安裝成功。
+- 系統 RAM 實測 63.94 GiB total / 35.48 GiB available。
+- RTX 2060 實測 6144 MiB total / 3475 MiB free（測試當下）。
+- FFmpeg 尚未安裝。
+- PyTorch 尚未安裝；下一 checkpoint 為 CUDA/FP16 smoke test。
