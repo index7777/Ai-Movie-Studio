@@ -142,3 +142,28 @@ PyTorch: NOT INSTALLED
 - Windows WDDM 桌面狀態下僅約 3.4GB GPU VRAM 可直接使用；正式 benchmark 前應關閉非必要 GPU 應用。
 - FFmpeg 尚未安裝，列為本機 runtime dependency，不使用 GitHub Actions 自動安裝。
 - 下一關先固定 PyTorch CUDA wheel 並執行 FP16 smoke test，再安裝任何 I2V backend。
+
+
+## P-010：PyTorch CUDA preflight 通過，但 BF16 API 回報不可直接當硬體能力
+
+2026-09-28 使用：
+
+```text
+torch: 2.9.0+cu128
+PyTorch CUDA runtime: 12.8
+GPU: RTX 2060
+Compute capability: 7.5
+FP16 smoke test: PASS
+torch.cuda.is_bf16_supported(): True
+```
+
+同次測試中 PyTorch `mem_get_info` 回報約 4.99 GiB free / 6.00 GiB total，與 `nvidia-smi` 的 WDDM process/accounting 顯示不同，因此兩者不可直接互相比較。
+
+**重要**：RTX 2060 / Turing (SM 7.5) 不具 Ampere 等級的原生 BF16 Tensor Core 路徑。新版 PyTorch 的 `is_bf16_supported()` 回傳值可能代表框架可執行/模擬相關 dtype，而不是證明此 GPU 有原生 BF16 Tensor Core 加速。
+
+**專案策略**：
+
+- RTX 2060 backend 預設使用 FP16。
+- 不因 `is_bf16_supported() == True` 自動選 BF16。
+- dtype policy 同時考慮 GPU architecture / compute capability。
+- 發現缺少 NumPy 的 warning；在模型依賴安裝前補上 NumPy。
