@@ -237,10 +237,21 @@ There are modules in Transformer3DModel that should be kept in float32: [].
 Casting directly with to() can lead to inconsistent results...
 ```
 
-之後程序返回 shell，未印出 Ai-Movie-Studio 的 RESULT/STATUS，且沒有 Python traceback。這表示失敗點已進入 upstream model loading/casting 附近，但目前資訊不足以判定是 Windows process termination、native/CUDA failure、OOM，或 upstream dtype path。
+之後程序返回 shell，未印出 Ai-Movie-Studio 的 RESULT/STATUS，且沒有 Python traceback。第二次執行取得 Windows exit code `-1073741819`，即 `0xC0000005` (STATUS_ACCESS_VIOLATION)。因此這不是一般 Python exception，也沒有證據可直接標成 CUDA OOM；失敗點位於 upstream model loading/casting 附近的 native process crash。
 
 **下一步診斷規則**：
 - benchmark 必須輸出 process exit 可觀察資訊並 flush stage markers。
 - Windows 執行後立即記錄 `echo %ERRORLEVEL%`。
 - 同時檢查是否產生 output artifact。
 - 在取得 exit code 前，不把此事件直接歸類為 CUDA OOM。
+
+
+### P-014 follow-up：停止在 RTX 2060 上重試 upstream BF16 路徑
+
+官方 inference source 的 `create_transformer(..., precision="bfloat16")` 會將 transformer 轉成 `torch.bfloat16`，而建立 pipeline 後也會把 VAE 與 T5 text encoder 轉成 BF16。RTX 2060/Turing 首次實測在這個 model cast/load 階段以 Windows `0xC0000005` native access violation 終止。
+
+**決策**：
+- 不再以相同 config 重跑，避免無資訊增益的 native crash。
+- 下一個 LTX 實驗必須是「真正修改 upstream dtype path」的 FP16 patch，而不是只改 Ai-Movie-Studio profile/YAML。
+- patch 前先以獨立 subprocess 做最小 BF16/FP16 CUDA smoke test，讓 native crash 不會帶走主 benchmark process。
+- 若 patched FP16 仍 native crash 或超出 6GB VRAM，LTX 2B 在此硬體列為不適合 MVP baseline，轉測下一 backend。
