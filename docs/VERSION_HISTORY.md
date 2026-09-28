@@ -67,3 +67,25 @@ STATUS: PASS
 - 發現 NumPy 尚未安裝。
 - PyTorch 回報 BF16 supported=True，但 RTX 2060/Turing 的 backend policy 仍固定優先 FP16，不把該 API 當作原生 BF16 Tensor Core 能力判定。
 - CUDA 基礎環境驗證完成，下一階段進入 I2V backend feasibility benchmark。
+
+
+### 2026-09-28 engine bootstrap checkpoint PASS
+
+實機輸出：
+
+```text
+GPU: NVIDIA GeForce RTX 2060
+Compute capability: 7.5
+VRAM: ~6.00 GiB
+PyTorch free VRAM: ~4.99 GiB
+System RAM: ~63.94 GiB
+Available RAM: ~32.55 GiB
+Profile: low_vram
+dtype: float16
+cpu_offload: true
+batch_size: 1
+benchmark target: 512x288 / 2.0s / <=49 frames
+STATUS: READY FOR BACKEND BENCHMARK
+```
+
+下一階段：實測第一個 I2V backend。首選候選為 LTX-Video 2B distilled，但必須先做相容性/VRAM feasibility 驗證；RTX 2060 不使用 Ada+ 專用 FP8 kernels，且專案仍以 FP16 為 Turing 預設。
