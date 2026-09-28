@@ -167,3 +167,17 @@ torch.cuda.is_bf16_supported(): True
 - 不因 `is_bf16_supported() == True` 自動選 BF16。
 - dtype policy 同時考慮 GPU architecture / compute capability。
 - 發現缺少 NumPy 的 warning；在模型依賴安裝前補上 NumPy。
+
+
+## P-011：直接執行子目錄 script 時找不到 repository package
+
+**錯誤**：
+
+```text
+python benchmarks\\i2v.py
+ModuleNotFoundError: No module named 'engine'
+```
+
+**原因**：Python 直接執行 `benchmarks/i2v.py` 時，`sys.path[0]` 是 `benchmarks/`，repository root 不一定在 module search path，因此 sibling package `engine/` 無法 import。
+
+**修正**：benchmark entrypoint 明確將 repository root 加入 `sys.path`。MVP 後續若正式 package 化，改用 `pyproject.toml` + editable install，避免各 entrypoint 重複處理 import path。
