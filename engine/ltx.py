@@ -58,7 +58,7 @@ class LTXVideoEngine(VideoEngine):
         requested_frames = int(request.options.get("num_frames", profile.max_frames_hint))
         num_frames = max(9, requested_frames - ((requested_frames - 1) % 8))
 
-        request.output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_dir = request.output_path if request.output_path.suffix == "" else request.output_path.parent\n        output_dir.mkdir(parents=True, exist_ok=True)
         torch.cuda.reset_peak_memory_stats()
         started = time.perf_counter()
 
@@ -70,7 +70,7 @@ class LTXVideoEngine(VideoEngine):
                 width=width,
                 num_frames=num_frames,
                 seed=request.seed,
-                output_path=str(request.output_path),
+                output_path=str(output_dir),\n                offload_to_cpu=profile.cpu_offload,
                 conditioning_media_paths=[str(request.image_path)],
                 conditioning_start_frames=[0],
             )
