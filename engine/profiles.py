@@ -20,7 +20,25 @@ class RuntimeProfile:
 
 
 def select_runtime_profile(hw: HardwareInfo) -> RuntimeProfile:
-    # MVP baseline: <= 6.5 GiB cards, including RTX 2060 6GB.
+    # Pascal-class 6 GB cards need a stricter legacy profile than Turing.
+    if (
+        hw.cuda_available
+        and hw.compute_capability is not None
+        and hw.compute_capability[0] < 7
+        and hw.total_vram_gib <= 6.5
+    ):
+        return RuntimeProfile(
+            name="legacy_low_vram",
+            dtype="float16",
+            cpu_offload=True,
+            batch_size=1,
+            target_width=384,
+            target_height=216,
+            target_duration_seconds=1.0,
+            max_frames_hint=25,
+        )
+
+    # MVP baseline: <= 6.5 GiB Turing-or-newer cards, including RTX 2060 6GB.
     if hw.cuda_available and hw.total_vram_gib <= 6.5:
         return RuntimeProfile(
             name="low_vram",
