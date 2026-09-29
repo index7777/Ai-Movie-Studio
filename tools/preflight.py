@@ -94,11 +94,12 @@ def main() -> int:
     except Exception as exc:
         print(f"CUDA free VRAM: unavailable ({exc})")
 
-    # Turing (compute capability 7.5) supports fast FP16 Tensor Core paths,
-    # but native BF16 Tensor Core support is an Ampere-generation feature.
-    fp16_expected = major >= 7
+    # FP16 arithmetic can work on Pascal, but fast Tensor Core FP16 paths
+    # start with Volta/Turing-class hardware. Keep capability and smoke-test
+    # results separate so "expected usable" is not misread as compatibility.
+    fp16_fast_tensor_core_expected = major >= 7
     bf16_supported = bool(getattr(torch.cuda, "is_bf16_supported", lambda: False)())
-    print(f"FP16 expected usable: {fp16_expected}")
+    print(f"FP16 fast Tensor Core path expected: {fp16_fast_tensor_core_expected}")
     print(f"BF16 reported supported: {bf16_supported}")
 
     try:
