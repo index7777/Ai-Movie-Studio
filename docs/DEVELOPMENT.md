@@ -117,3 +117,10 @@ The diagnostic stops on the first failing stage so a native crash does not obscu
 Measured cumulative BF16 CUDA residency makes the upstream eager-placement strategy unsuitable for the 6GB target: Transformer alone allocates about 3.58 GiB; Transformer + VAE reaches about 5.93 GiB allocated with no CUDA memory reported free before T5 is loaded.
 
 The low-VRAM backend must therefore alter model residency, not merely sampler dimensions or the FP16/BF16 label. The next implementation target is a CPU-resident pipeline with sequential/model offload hooks so Transformer, VAE and T5 are not simultaneously resident on CUDA during initialization.
+
+
+## LTX CPU-resident construction prototype
+
+Upstream `create_ltx_video_pipeline()` eagerly moves Transformer, VAE and T5 to the selected device before `LTXVideoPipeline` is returned. The later `offload_to_cpu` argument belongs to the pipeline invocation and therefore cannot prevent the observed 6GB initialization overflow. cite source: upstream `ltx_video/inference.py` inspected 2026-09-29.
+
+`tools/ltx_cpu_pipeline_diagnostic.py` reproduces the base 2B pipeline construction while deliberately omitting all eager `.to("cuda")` calls. Acceptance criteria: pipeline construction completes, Transformer/VAE/T5 all report `cpu`, and CUDA allocated/reserved memory remains near zero. Only after this passes should generation-time offload be tested.
