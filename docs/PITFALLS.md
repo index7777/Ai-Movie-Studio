@@ -321,3 +321,25 @@ Then T5 checkpoint shard loading begins:
 - RTX 2060 LTX backend 必須在 pipeline construction 階段避免同時把 Transformer、VAE、T5 常駐 CUDA。
 - 下一個 prototype 採 sequential/model CPU offload：模型初始留 CPU，只在需要時搬運或使用 Accelerate offload hooks。
 - 在 offload prototype 成功前，不再執行原始 upstream full-generation path。
+
+
+## P-015：GTX 1060 6GB / Pascal 第二測試主機
+
+第二台 Windows 主機 baseline：
+
+```text
+Python: 3.11.7
+GPU: NVIDIA GeForce GTX 1060 6GB
+Compute capability: 6.1
+Driver: 582.28
+PyTorch: 2.7.1+cu126
+PyTorch CUDA runtime: 12.6
+torch arch list includes: sm_61
+FP16 smoke test: PASS
+System RAM: 47.93 GiB total / about 12.87 GiB available at test time
+CUDA free VRAM: about 5.08 / 6.00 GiB
+```
+
+原 preflight 的 `FP16 expected usable: False` 標籤容易誤導：Pascal 上 FP16 smoke test 實際通過；該 boolean 原本只是以 compute capability >= 7 粗略代表較新的 fast/Tensor-Core 路徑，不應解讀為 FP16 不可用。preflight 已改名以區分「fast Tensor Core path expectation」與實際 FP16 compatibility。
+
+Runtime policy 新增 `legacy_low_vram`：Pascal <=6.5 GiB 使用 FP16 + CPU offload，初始 benchmark hint 降至 384x216 / 25 frames。這只是保守測試 profile，不代表 LTX 已證實能在 GTX 1060 上完成 inference。
