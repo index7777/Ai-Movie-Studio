@@ -343,3 +343,15 @@ CUDA free VRAM: about 5.08 / 6.00 GiB
 原 preflight 的 `FP16 expected usable: False` 標籤容易誤導：Pascal 上 FP16 smoke test 實際通過；該 boolean 原本只是以 compute capability >= 7 粗略代表較新的 fast/Tensor-Core 路徑，不應解讀為 FP16 不可用。preflight 已改名以區分「fast Tensor Core path expectation」與實際 FP16 compatibility。
 
 Runtime policy 新增 `legacy_low_vram`：Pascal <=6.5 GiB 使用 FP16 + CPU offload，初始 benchmark hint 降至 384x216 / 25 frames。這只是保守測試 profile，不代表 LTX 已證實能在 GTX 1060 上完成 inference。
+
+
+## P-016：GTX 1060 主機在 CPU-resident LTX construction 期間發生系統藍屏
+
+第二測試主機（GTX 1060 6GB、約 48 GiB system RAM）執行 `tools/ltx_cpu_pipeline_diagnostic.py` 時，在 diagnostic 尚未完成前發生 Windows BSOD；使用者描述與 memory 壓力同時發生。這次測試因此記為 **FAIL / system-level crash**，不能視為 Python OOM，也不能僅憑現象斷定唯一根因。
+
+工程決策：
+- 暫停在此主機重跑完整 LTX CPU-resident construction 與 generation。
+- 不再允許 diagnostic 同時持有 VAE + Transformer + T5 的完整 CPU resident set。
+- 下一版 diagnostic 必須採 subprocess/stage isolation，並在每階段設定 RAM safety guard；available RAM 低於門檻即主動退出。
+- GTX 1060 主機暫時只用於較小、可隔離的 compatibility 測試。
+- RTX 2060 / 64 GiB RAM 主機仍是 LTX low-VRAM offload implementation 的主要驗證機。
